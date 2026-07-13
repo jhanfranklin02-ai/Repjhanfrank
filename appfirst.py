@@ -1,117 +1,156 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Matriz de Decisión Analítica", layout="wide")
+st.set_page_config(page_title="Asistente de Decisiones Críticas", layout="wide")
 
-st.title("🎯 Mi Asistente de Decisiones Críticas")
-st.write("Neutraliza el ego y calibra tus opciones basándote en tu realidad actual.")
+st.title("🎯 Mi Asistente de Decisiones con Propósito")
+st.write("Neutraliza el ego y alinea tus decisiones diarias con tu realidad y principios.")
 
-# --- EXPLICACIÓN DE REGLAS ---
+# --- BARRA LATERAL: PRINCIPIOS Y GUÍA ---
 with st.sidebar:
     st.header("⚙️ Guía de Calibración")
     
     st.markdown("""
-    ### ⚖️ Escala de Pesos (1 al 5)
-    *Determina qué tan importante es este factor hoy en tu vida.*
-    * **5 - Crítico / No negociable:** Si falla aquí, la opción se descarta por completo.
-    * **4 - Muy importante:** Impacto directo en tu bienestar o negocio a corto plazo.
-    * **3 - Deseable:** Importante, pero puedes compensarlo por otra vía.
-    * **2 - Secundario:** Es un "plus", pero no define el éxito.
-    * **1 - Ruido / Capricho / Ego:** Validación externa o el "qué dirán".
+    ### 🧭 Criterios Esenciales
+    Como adventista, considera incluir siempre filtros como:
+    * **Alineación Espiritual:** ¿Esto afecta mi comunión con Dios o el sábado?
+    * **Salud y Bienestar:** ¿Respeta el templo del Espíritu Santo?
+    * **Propósito y Servicio:** ¿Me permite servir a los demás?
     
-    ### 📊 Escala de Puntuación (1 al 10)
-    *Cómo cumple cada opción con el criterio.*
-    * **9 a 10:** Lo resuelve de inmediato, sin riesgos y con mínimo esfuerzo.
-    * **6 a 8:** Cumple bien, pero exige un esfuerzo extra o disciplina.
-    * **3 a 5:** Insuficiente. Apenas roza el mínimo o pone trabas.
-    * **1 a 2:** Nulo o altamente riesgoso.
+    ### ⚖️ Escala de Pesos (1 al 5)
+    * **5 - Crítico / No negociable:** Principios de fe, valores inquebrantables, prioridades máximas.
+    * **4 - Muy importante:** Impacto fuerte a corto plazo (estudios, empresa).
+    * **3 - Deseable:** Es importante, pero flexible.
+    * **2 - Secundario:** Un beneficio extra.
+    * **1 - Ruido / Ego:** Validación externa, caprichos o el qué dirán.
     """)
 
-# --- SECCIÓN 1: DEFINIR OPCIONES ---
-st.subheader("1. Define las Opciones a Evaluar")
-col_op1, col_op2 = st.columns(2)
-with col_op1:
-    opcion_a = st.text_input("Nombre de la Opción A:", value="UNC + Foco Empresa")
-with col_op2:
-    opcion_b = st.text_input("Nombre de la Opción B:", value="Esperar + Extranjero")
+# --- INICIALIZACIÓN DE LA MEMORIA DE LA APP (SESSION STATE) ---
+if "lista_opciones" not in st.session_state:
+    st.session_state.lista_opciones = ["UNC + Foco Empresa", "Esperar + Extranjero"]
+
+if "lista_criterios" not in st.session_state:
+    st.session_state.lista_criterios = [
+        "Alineación con mis principios y fe (Adventista)",
+        "Impacto inmediato en mi empresa / negocio",
+        "Factor Tiempo / Rapidez en avanzar",
+        "Espacio para autoaprendizaje (Software)",
+        "Validación externa / Prestigio (Ego)"
+    ]
+
+# --- SECCIÓN 1: GESTIÓN DE OPCIONES ---
+st.subheader("1. Opciones a Evaluar")
+st.write("Añade las alternativas que estás comparando.")
+
+# Layout para agregar opción
+col_add_op, _ = st.columns([2, 2])
+with col_add_op:
+    nueva_opcion = st.text_input("Escribe una nueva opción:", key="input_nueva_op")
+    if st.button("➕ Agregar Opción"):
+        if nueva_opcion.strip() != "" and nueva_opcion not in st.session_state.lista_opciones:
+            st.session_state.lista_opciones.append(nueva_opcion.strip())
+            st.rerun()
+
+# Mostrar opciones actuales con botón de eliminar
+cols_opciones = st.columns(len(st.session_state.lista_opciones) if st.session_state.lista_opciones else 1)
+opciones_a_eliminar = []
+
+for idx, op in enumerate(st.session_state.lista_opciones):
+    with cols_opciones[idx]:
+        st.info(f"**{op}**")
+        if st.button(f"🗑️ Eliminar", key=f"del_op_{idx}"):
+            opciones_a_eliminar.append(op)
+
+if opciones_a_eliminar:
+    for op in opciones_a_eliminar:
+        st.session_state.lista_opciones.remove(op)
+    st.rerun()
 
 st.markdown("---")
 
-# --- SECCIÓN 2: ENTRADA DINÁMICA DE CRITERIOS ---
-st.subheader("2. Define tus Criterios Personalizados")
-st.write("Escribe abajo los criterios que vas a evaluar. Deja en blanco los que no uses.")
+# --- SECCIÓN 2: GESTIÓN DE CRITERIOS ---
+st.subheader("2. Criterios de Evaluación")
+st.write("Define los filtros por los que pasarás esta decisión.")
 
-# Inicializamos 5 filas por defecto, pero puedes escribir los nombres que quieras
-criterios_por_defecto = [
-    "Impacto inmediato en mi empresa / negocio",
-    "Factor Tiempo / Rapidez en obtener el grado",
-    "Espacio para autoaprendizaje (Software/Programación)",
-    "Viabilidad financiera actual",
-    "Validación externa / Prestigio ante amigos (Ego)"
-]
+col_add_crit, _ = st.columns([2, 2])
+with col_add_crit:
+    nuevo_criterio = st.text_input("Escribe un nuevo criterio:", key="input_nuevo_crit")
+    if st.button("➕ Agregar Criterio"):
+        if nuevo_criterio.strip() != "" and nuevo_criterio not in st.session_state.lista_criterios:
+            st.session_state.lista_criterios.append(nuevo_criterio.strip())
+            st.rerun()
 
-criterios_usuario = []
+st.markdown("### 📊 Panel de Votación")
+criterios_datos = []
+criterios_a_eliminar = []
 
-# Creamos los bloques de votación
-for i in range(5):
-    nombre_sugerido = criterios_por_defecto[i] if i < len(criterios_por_defecto) else ""
-    nombre_crit = st.text_input(f"Criterio #{i+1}:", value=nombre_sugerido, key=f"nom_crit_{i}")
-    
-    if nombre_crit.strip() != "":
-        # Si el usuario escribió un criterio, abrimos los controles para puntuarlo
-        with st.container():
-            c1, c2, c3 = st.columns([2, 1, 1])
-            with c1:
-                peso = st.slider(
-                    f"Importancia de: '{nombre_crit}'", 
-                    1, 5, 3, 
-                    key=f"peso_{i}",
-                    help="5 = Crítico, 3 = Deseable, 1 = Ruido/Ego"
-                )
-            with c2:
-                nota_a = st.slider(
-                    f"Nota para {opcion_a}", 
-                    1, 10, 5, 
-                    key=f"nota_a_{i}",
-                    help="10 = Excelente/Inmediato, 1 = Nulo/Imposible"
-                )
-            with c3:
-                nota_b = st.slider(
-                    f"Nota para {opcion_b}", 
-                    1, 10, 5, 
-                    key=f"nota_b_{i}",
-                    help="10 = Excelente/Inmediato, 1 = Nulo/Imposible"
-                )
-            
-            criterios_usuario.append({
-                "Criterio": nombre_crit,
-                "Peso": peso,
-                f"Nota {opcion_a}": nota_a,
-                f"Puntaje {opcion_a}": peso * nota_a,
-                f"Nota {opcion_b}": nota_b,
-                f"Puntaje {opcion_b}": peso * nota_b
-            })
-            st.markdown("<br>", unsafe_allow_html=True)
-
-# --- SECCIÓN 3: PROCESAMIENTO Y RESULTADOS ---
-if len(criterios_usuario) > 0:
-    df = pd.DataFrame(criterios_usuario)
-    
-    total_a = df[f"Puntaje {opcion_a}"].sum()
-    total_b = df[f"Puntaje {opcion_b}"].sum()
-    
-    st.markdown("---")
-    st.subheader("📊 Tabla de Resultados Finales")
-    
-    # Cartel del ganador destacado
-    if total_a > total_b:
-        st.success(f"🏆 **Decisión Óptima:** Elije **{opcion_a}** con **{total_a} puntos** (Frente a {total_b} de {opcion_b}). Esta opción se alinea mejor con lo que de verdad te importa hoy.")
-    elif total_b > total_a:
-        st.success(f"🏆 **Decisión Óptima:** Elije **{opcion_b}** con **{total_b} puntos** (Frente a {total_a} de {opcion_a}). Esta opción destaca en los pilares que ponderaste más alto.")
-    else:
-        st.warning(f"⚖️ **Empate Técnico:** Ambas opciones suman **{total_a} puntos**. Ve a la barra lateral, revisa los pesos y ajusta con más rigurosidad.")
+# Crear los deslizadores dinámicamente para cada criterio y cada opción
+for i, crit in enumerate(st.session_state.lista_criterios):
+    with st.expander(f"🔹 {crit}", expanded=True):
+        col_crit_info, col_controles = st.columns([1, 2])
         
-    # Mostrar la tabla limpia en pantalla
-    st.dataframe(df, use_container_width=True)
+        with col_crit_info:
+            st.write(f"**Criterio #{i+1}**")
+            if st.button("🗑️ Eliminar Criterio", key=f"del_crit_{i}"):
+                criterios_a_eliminar.append(crit)
+        
+        with col_controles:
+            # Deslizador para el peso del criterio
+            peso = st.slider(f"Importancia / Peso", 1, 5, 3, key=f"peso_{i}", help="5 = Crítico (Principios), 1 = Ruido (Ego)")
+            
+            # Crear un deslizador de nota para cada opción disponible
+            notas_opciones = {}
+            cols_notas = st.columns(len(st.session_state.lista_opciones) if st.session_state.lista_opciones else 1)
+            
+            for j, op in enumerate(st.session_state.lista_opciones):
+                with cols_notas[j]:
+                    nota = st.slider(f"Nota para {op}", 1, 10, 5, key=f"nota_{i}_{j}")
+                    notas_opciones[op] = nota
+
+        # Guardar datos para los cálculos
+        fila = {"Criterio": crit, "Peso": peso}
+        for op, nota in notas_opciones.items():
+            fila[f"Nota {op}"] = nota
+            fila[f"Puntaje {op}"] = peso * nota
+        criterios_datos.append(fila)
+
+if criterios_a_eliminar:
+    for crit in criterios_a_eliminar:
+        st.session_state.lista_criterios.remove(crit)
+    st.rerun()
+
+# --- SECCIÓN 3: RESULTADOS ---
+st.markdown("---")
+st.subheader("📊 Resultados de la Matriz")
+
+if len(st.session_state.lista_opciones) < 2:
+    st.warning("⚠️ Necesitas al menos 2 opciones para poder realizar una comparación.")
+elif len(criterios_datos) == 0:
+    st.warning("⚠️ Agrega al menos un criterio para calcular los puntajes.")
 else:
-    st.warning("Escribe al menos un criterio arriba para calcular el resultado.")
+    df = pd.DataFrame(criterios_datos)
+    
+    # Calcular totales
+    totales = {}
+    for op in st.session_state.lista_opciones:
+        totales[op] = df[f"Puntaje {op}"].sum()
+    
+    # Encontrar al ganador
+    ganador = max(totales, key=totales.get)
+    max_puntaje = totales[ganador]
+    
+    # Verificar si hay un empate
+    valores = list(totales.values())
+    if valores.count(max_puntaje) > 1:
+        st.warning(f"⚖️ **Empate Técnico:** Varias opciones alcanzaron {max_puntaje} puntos. Revisa los pesos de tus principios espirituales o de negocio para desempatar.")
+    else:
+        st.success(f"🏆 **Decisión Óptima:** **{ganador}** con **{max_puntaje} puntos**. Esta opción es la que mejor protege tu esencia, tus metas y tu paz actual.")
+        
+    # Mostrar puntajes resumidos
+    st.write("### Resumen de Puntajes:")
+    for op, total in totales.items():
+        st.write(f"* **{op}:** {total} puntos")
+        
+    # Mostrar tabla completa de ingeniería
+    st.markdown("#### Detalle Analítico:")
+    st.dataframe(df, use_container_width=True)
